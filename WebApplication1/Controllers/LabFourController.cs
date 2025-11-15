@@ -68,15 +68,16 @@ namespace WebApplication1.Controllers
         {
             try
             {
+                var availableFiles = Directory.GetFiles(_keysDirectory, "*.pem")
+                    .Select(Path.GetFileName)
+                    .ToList();
+
+                if (!availableFiles.Contains(filename))
+                {
+                    return NotFound(new { message = "Key file not found" });
+                }
+                
                 string filePath = Path.GetFullPath(_keysDirectory + filename);
-                if (!filePath.StartsWith(_keysDirectory))
-                {
-                    return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
-                }
-                else if (!System.IO.File.Exists(filePath))
-                {
-                    return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
-                }
 
                 var publicKey = await _rsaService.LoadPublicKeyAsync(filePath);
                 return Ok(new
@@ -96,15 +97,16 @@ namespace WebApplication1.Controllers
         {
             try
             {
+                var availableFiles = Directory.GetFiles(_keysDirectory, "*.pem")
+                    .Select(Path.GetFileName)
+                    .ToList();
+
+                if (!availableFiles.Contains(filename))
+                {
+                    return NotFound(new { message = "Key file not found" });
+                }
+                
                 string filePath = Path.Combine(_keysDirectory, filename);
-                if (!filePath.StartsWith(_keysDirectory))
-                {
-                    return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
-                }
-                else if (!System.IO.File.Exists(filePath))
-                {
-                    return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
-                }
 
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
                 return File(fileBytes, "application/x-pem-file", filename);
@@ -120,16 +122,17 @@ namespace WebApplication1.Controllers
         public async Task<IActionResult> DownloadPrivateKey(string filename)
         {
             try
-            {
+            {    
+                var availableFiles = Directory.GetFiles(_keysDirectory, "*.pem")
+                    .Select(Path.GetFileName)
+                    .ToList();
+
+                if (!availableFiles.Contains(filename))
+                {
+                    return NotFound(new { message = "Key file not found" });
+                }
+                
                 string filePath = Path.Combine(_keysDirectory, filename);
-                if (!filePath.StartsWith(_keysDirectory))
-                {
-                    return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
-                }
-                else if (!System.IO.File.Exists(filePath))
-                {
-                    return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
-                }
 
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
                 return File(fileBytes, "application/x-pem-file", filename);
@@ -331,7 +334,7 @@ namespace WebApplication1.Controllers
                     return BadRequest(new { message = "Either privateKey or privateKeyFile must be provided" });
                 }
 
-                var (decryptedData, processingTime) = await _rsaService.DecryptTextAsync(request.Text, privateKey);
+                var (decryptedData, _) = await _rsaService.DecryptTextAsync(request.Text, privateKey);
 
                 return Ok(new DecryptionTextResponse {
                     Success = true,
@@ -350,34 +353,39 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(filename) ||
-                    filename.Contains("..") ||
-                    filename.Contains("/") ||
-                    filename.Contains("\\"))
+                if (string.IsNullOrWhiteSpace(filename))
                 {
-                    return BadRequest(new { message = "Invalid filename" });
+                    return BadRequest(new { message = "Filename cannot be empty" });
+                }
+
+                if (filename.Contains("..") || filename.Contains("/") || filename.Contains("\\"))
+                {
+                    return BadRequest(new { message = "Invalid filename format" });
+                }
+
+                var availableFiles = Directory.GetFiles(_keysDirectory, "*.pem")
+                    .Select(Path.GetFileName)
+                    .ToList();
+
+                if (!availableFiles.Contains(filename))
+                {
+                    return NotFound(new { message = "Key file not found" });
                 }
 
                 string filePath = Path.Combine(_keysDirectory, filename);
-                if (!filePath.StartsWith(_keysDirectory))
-                {
-                    return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
-                }
-                else if (!System.IO.File.Exists(filePath))
-                {
-                    return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
-                }
 
                 await _rsaService.DeleteKeyAsync(filePath);
 
                 return Ok(new
                 {
                     success = true,
-                    message = $"Key file '{filename}' deleted successfully"
+                    message = "Key file successfully deleted",
+                    filename = filename
                 });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error deleting key file: {Filename}", filename);
                 return StatusCode(500, new { message = "Error deleting key file", error = ex.Message });
             }
         }

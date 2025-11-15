@@ -1,9 +1,11 @@
 ﻿namespace WebApplication1.Constants.ControllersConstants;
 
-public class LabFourControllerConstants
+public static class LabFourControllerConstants
 {
-    public static string EntyIsOutsideOfTheTarget = "Entry is outside of the target directory";
-    public static string PublicKeyNotFount = "Public key file not found";
-    public static string ErrorLoadingPublic = "Error loading public key";
-    public static string FileIsRequired = "File is required";
+    static LabFourControllerConstants();
+    
+    public static readonly string EntyIsOutsideOfTheTarget = "Entry is outside of the target directory";
+    public static readonly string PublicKeyNotFount = "Public key file not found";
+    public static readonly string ErrorLoadingPublic = "Error loading public key";
+    public static readonly string FileIsRequired = "File is required";
 }
