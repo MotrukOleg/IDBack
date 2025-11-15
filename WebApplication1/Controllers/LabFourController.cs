@@ -68,7 +68,7 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var availableFiles = Directory.GetFiles(_keysDirectory, "*.pem")
+                var availableFiles = Directory.GetFiles(_keysDirectory, LabFourControllerConstants.PemFormat)
                     .Select(Path.GetFileName)
                     .ToList();
 
@@ -97,7 +97,7 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var availableFiles = Directory.GetFiles(_keysDirectory, "*.pem")
+                var availableFiles = Directory.GetFiles(_keysDirectory, LabFourControllerConstants.PemFormat)
                     .Select(Path.GetFileName)
                     .ToList();
 
@@ -123,7 +123,7 @@ namespace WebApplication1.Controllers
         {
             try
             {    
-                var availableFiles = Directory.GetFiles(_keysDirectory, "*.pem")
+                var availableFiles = Directory.GetFiles(_keysDirectory, LabFourControllerConstants.PemFormat)
                     .Select(Path.GetFileName)
                     .ToList();
 
@@ -197,7 +197,7 @@ namespace WebApplication1.Controllers
                 }
                 else
                 {
-                    return BadRequest(new { message = "Either publicKeyFilename or publicKeyFile must be provided" });
+                    return BadRequest(new { message = LabFourControllerConstants.OneOfKeysMustBeProvided });
                 }
 
                 using var inputStream = file.File.OpenReadStream();
@@ -363,7 +363,7 @@ namespace WebApplication1.Controllers
                     return BadRequest(new { message = "Invalid filename format" });
                 }
 
-                var availableFiles = Directory.GetFiles(_keysDirectory, "*.pem")
+                var availableFiles = Directory.GetFiles(_keysDirectory, LabFourControllerConstants.PemFormat)
                     .Select(Path.GetFileName)
                     .ToList();
 
@@ -385,7 +385,7 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting key file: {Filename}", filename);
+                _logger.LogError(ex, "Error deleting key file");
                 return StatusCode(500, new { message = "Error deleting key file", error = ex.Message });
             }
         }

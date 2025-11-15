@@ -80,7 +80,7 @@ namespace WebApplication1.Services.PseudoGenService
 
         public async Task<double> SequenceEstimation(long[] seq)
         {
-            if (seq == null || seq.Length < 2) ;
+            if (seq == null || seq.Length < 2) return 0;
 
             long coprimeCount = 0;
             long totalPairs = seq.Length - 1;

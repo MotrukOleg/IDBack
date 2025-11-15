@@ -9,6 +9,7 @@ namespace WebApplication1.Services.RsaService
     public class RsaService : IRsaService
     {
         private readonly ILogger<RsaService> _logger;
+        private const int HeaderSize = 12;
 
         public RsaService(ILogger<RsaService> logger)
         {
@@ -33,7 +34,7 @@ namespace WebApplication1.Services.RsaService
                 {
                     PemKey = privateKeyPem,
                 };
-                
+
                 return (publicKey, privateKey);
             });
         }
@@ -41,57 +42,45 @@ namespace WebApplication1.Services.RsaService
         public async Task SavePublicKeyAsync(RsaKeyDto key, string filePath)
         {
             string pemFilePath = Path.ChangeExtension(filePath, ".pem");
-            var content = new StringBuilder();
-            content.Append(key.PemKey);
-
-            await File.WriteAllTextAsync(pemFilePath, content.ToString()); ;
+            await File.WriteAllTextAsync(pemFilePath, key.PemKey);
         }
 
         public async Task SavePrivateKeyAsync(RsaKeyDto privateKey, string filePath)
         {
             string pemFilePath = Path.ChangeExtension(filePath, ".pem");
-            var content = new StringBuilder();
-            content.Append(privateKey.PemKey);
-
-            await File.WriteAllTextAsync(pemFilePath, content.ToString());
+            await File.WriteAllTextAsync(pemFilePath, privateKey.PemKey);
         }
 
         public async Task<RsaKeyDto> LoadPublicKeyAsync(string filePath)
         {
             string content = await File.ReadAllTextAsync(filePath);
-            
-            var lines = content.Split('\n');
-            if (lines[0].StartsWith("# Created at:"))
-            {
-                content = string.Join('\n', lines.Skip(1));
-            }
+            content = RemoveMetadataComment(content);
 
-            var key = new RsaKeyDto
+            return new RsaKeyDto
             {
                 PemKey = content.Trim()
             };
-            
-            return key;
         }
 
         public async Task<RsaKeyDto> LoadPrivateKeyAsync(string filePath)
         {
             string content = await File.ReadAllTextAsync(filePath);
+            content = RemoveMetadataComment(content);
 
-            string createdAt = "Unknown";
-            var lines = content.Split('\n');
-            if (lines[0].StartsWith("# Created at:"))
-            {
-                createdAt = lines[0].Replace("# Created at:", "").Trim();
-                content = string.Join('\n', lines.Skip(1));
-            }
-
-            var key = new RsaKeyDto
+            return new RsaKeyDto
             {
                 PemKey = content.Trim()
             };
-            
-            return key;
+        }
+
+        private string RemoveMetadataComment(string content)
+        {
+            var lines = content.Split('\n');
+            if (lines.Length > 0 && lines[0].StartsWith("# Created at:"))
+            {
+                content = string.Join('\n', lines.Skip(1));
+            }
+            return content;
         }
 
         public async Task DeleteKeyAsync(string filePath)
@@ -100,7 +89,7 @@ namespace WebApplication1.Services.RsaService
             {
                 if (!File.Exists(filePath))
                 {
-                    throw new FileNotFoundException($"Key file not found: {filePath}");
+                    throw new FileNotFoundException("Key file not found");
                 }
 
                 try
@@ -109,7 +98,7 @@ namespace WebApplication1.Services.RsaService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Error deleting key file: {filePath}");
+                    _logger.LogError(ex, "Error deleting key file");
                     throw;
                 }
             });
@@ -187,27 +176,69 @@ namespace WebApplication1.Services.RsaService
                 byte[] ivLengthBytes = new byte[4];
                 byte[] metadataLengthBytes = new byte[4];
 
-                inputStream.Read(keyLengthBytes, 0, 4);
-                inputStream.Read(ivLengthBytes, 0, 4);
-                inputStream.Read(metadataLengthBytes, 0, 4);
+                if (!ReadExactly(inputStream, keyLengthBytes, 4))
+                {
+                    throw new InvalidOperationException("Failed to read key length from encrypted file");
+                }
+
+                if (!ReadExactly(inputStream, ivLengthBytes, 4))
+                {
+                    throw new InvalidOperationException("Failed to read IV length from encrypted file");
+                }
+
+                if (!ReadExactly(inputStream, metadataLengthBytes, 4))
+                {
+                    throw new InvalidOperationException("Failed to read metadata length from encrypted file");
+                }
 
                 int keyLength = BitConverter.ToInt32(keyLengthBytes, 0);
                 int ivLength = BitConverter.ToInt32(ivLengthBytes, 0);
                 int metadataLength = BitConverter.ToInt32(metadataLengthBytes, 0);
 
+                if (keyLength <= 0 || keyLength > 4096)
+                {
+                    throw new InvalidOperationException($"Invalid key length: {keyLength}");
+                }
+
+                if (ivLength <= 0 || ivLength > 256)
+                {
+                    throw new InvalidOperationException($"Invalid IV length: {ivLength}");
+                }
+
+                if (metadataLength <= 0 || metadataLength > 10485760)
+                {
+                    throw new InvalidOperationException($"Invalid metadata length: {metadataLength}");
+                }
+
                 byte[] encryptedAesKey = new byte[keyLength];
                 byte[] encryptedAesIV = new byte[ivLength];
                 byte[] metadataBytes = new byte[metadataLength];
 
-                inputStream.Read(encryptedAesKey, 0, keyLength);
-                inputStream.Read(encryptedAesIV, 0, ivLength);
-                inputStream.Read(metadataBytes, 0, metadataLength);
+                if (!ReadExactly(inputStream, encryptedAesKey, keyLength))
+                {
+                    throw new InvalidOperationException("Failed to read encrypted AES key from file");
+                }
+
+                if (!ReadExactly(inputStream, encryptedAesIV, ivLength))
+                {
+                    throw new InvalidOperationException("Failed to read encrypted AES IV from file");
+                }
+
+                if (!ReadExactly(inputStream, metadataBytes, metadataLength))
+                {
+                    throw new InvalidOperationException("Failed to read metadata from file");
+                }
 
                 byte[] aesKey = rsa.Decrypt(encryptedAesKey, RSAEncryptionPadding.OaepSHA256);
                 byte[] aesIV = rsa.Decrypt(encryptedAesIV, RSAEncryptionPadding.OaepSHA256);
 
                 string metadataJson = Encoding.UTF8.GetString(metadataBytes);
                 var metadata = System.Text.Json.JsonSerializer.Deserialize<FileMetadata>(metadataJson);
+
+                if (metadata == null)
+                {
+                    throw new InvalidOperationException("Failed to deserialize file metadata");
+                }
 
                 using var aes = Aes.Create();
                 aes.Key = aesKey;
@@ -223,6 +254,21 @@ namespace WebApplication1.Services.RsaService
 
                 return (outputStream.ToArray(), metadata.OriginalFileName, metadata.ContentType, stopwatch.Elapsed.TotalMilliseconds);
             });
+        }
+
+        private bool ReadExactly(Stream stream, byte[] buffer, int count)
+        {
+            int bytesRead = 0;
+            while (bytesRead < count)
+            {
+                int read = stream.Read(buffer, bytesRead, count - bytesRead);
+                if (read == 0)
+                {
+                    return false;
+                }
+                bytesRead += read;
+            }
+            return true;
         }
 
         public async Task<(string encryptedText, double encryptionTime)> EncryptTextAsync(string plainText, RsaKeyDto publicKey)
