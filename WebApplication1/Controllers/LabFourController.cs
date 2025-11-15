@@ -28,11 +28,11 @@ namespace WebApplication1.Controllers
         [HttpPost("generate-keys")]
         public async Task<IActionResult> GenerateKeys([FromQuery] int keySize = 2048)
         {
-            try
+            return await ExecuteAsync(async () =>
             {
                 if (keySize != 1024 && keySize != 2048 && keySize != 4096)
                 {
-                    return BadRequest(new { message = "Key size must be 1024, 2048, or 4096 bits" });
+                    throw new ArgumentException("Key size must be 1024, 2048, or 4096 bits");
                 }
 
                 var (publicKey, privateKey) = await _rsaService.GenerateKeysAsync(keySize);
@@ -52,82 +52,47 @@ namespace WebApplication1.Controllers
                     privateKeyPath = Path.GetFileName(privateKeyPath),
                     publicKeyPath = Path.GetFileName(publicKeyPath)
                 });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating RSA keys");
-                return StatusCode(500, new { message = "Error generating keys", error = ex.Message });
-            }
+            }, "Error generating RSA keys");
         }
 
         [HttpGet("public-key/{filename}")]
         public async Task<IActionResult> GetPublicKey(string filename)
         {
-            try
+            return await ExecuteAsync(async () =>
             {
                 string filePath = ValidateAndGetFilePath(filename);
                 var publicKey = await _rsaService.LoadPublicKeyAsync(filePath);
-
                 return Ok(new { pemKey = publicKey.PemKey });
-            }
-            catch (FileNotFoundException)
-            {
-                return NotFound(new { message = LabFourControllerConstants.KeyFileNotFound });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, LabFourControllerConstants.ErrorLoadingPublic);
-                return StatusCode(500, new { message = LabFourControllerConstants.ErrorLoadingPublic, error = ex.Message });
-            }
+            }, LabFourControllerConstants.ErrorLoadingPublic);
         }
 
         [HttpGet("download-public-key/{filename}")]
         public async Task<IActionResult> DownloadPublicKey(string filename)
         {
-            try
+            return await ExecuteAsync(async () =>
             {
                 string filePath = ValidateAndGetFilePath(filename);
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
-
                 return File(fileBytes, "application/x-pem-file", filename);
-            }
-            catch (FileNotFoundException)
-            {
-                return NotFound(new { message = LabFourControllerConstants.KeyFileNotFound });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, LabFourControllerConstants.ErrorLoadingPublic);
-                return StatusCode(500, new { message = LabFourControllerConstants.ErrorLoadingPublic, error = ex.Message });
-            }
+            }, LabFourControllerConstants.ErrorLoadingPublic);
         }
 
         [HttpGet("download-private-key/{filename}")]
         public async Task<IActionResult> DownloadPrivateKey(string filename)
         {
-            try
+            return await ExecuteAsync(async () =>
             {
                 string filePath = ValidateAndGetFilePath(filename);
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
-
                 return File(fileBytes, "application/x-pem-file", filename);
-            }
-            catch (FileNotFoundException)
-            {
-                return NotFound(new { message = LabFourControllerConstants.KeyFileNotFound });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, LabFourControllerConstants.ErrorLoadingPublic);
-                return StatusCode(500, new { message = LabFourControllerConstants.ErrorLoadingPublic, error = ex.Message });
-            }
+            }, LabFourControllerConstants.ErrorLoadingPublic);
         }
 
         [HttpGet("keys")]
         [ProducesResponseType(typeof(string), 200)]
         public IActionResult ListKeys()
         {
-            try
+            return Execute(() =>
             {
                 var publicKeys = Directory.GetFiles(_keysDirectory, "public_key_*.pem")
                     .Select(Path.GetFileName)
@@ -138,86 +103,48 @@ namespace WebApplication1.Controllers
                     .ToList();
 
                 return Ok(new { publicKeys, privateKeys });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error listing keys");
-                return StatusCode(500, new { message = "Error listing keys", error = ex.Message });
-            }
+            }, "Error listing keys");
         }
 
         [HttpPost("encrypt-file")]
         public async Task<IActionResult> EncryptFile([FromForm] EncryptRequest file)
         {
-            try
+            return await ExecuteAsync(async () =>
             {
-                if (file?.File == null || file.File.Length == 0)
-                {
-                    return BadRequest(new { message = LabFourControllerConstants.FileIsRequired });
-                }
-
-                RsaKeyDto publicKey = await ExtractPublicKeyAsync(file.publicKeyFile, file.publicKeyPem);
+                ValidateFile(file?.File);
+                RsaKeyDto publicKey = await ExtractKeyAsync(file.publicKeyFile, file.publicKeyPem);
 
                 using var inputStream = file.File.OpenReadStream();
                 var (encryptedData, _) = await _rsaService.EncryptFileAsync(
-                    inputStream,
-                    publicKey,
-                    file.File.FileName,
-                    file.File.ContentType);
+                    inputStream, publicKey, file.File.FileName, file.File.ContentType);
 
-                return File(encryptedData, "application/octet-stream", 
+                return File(encryptedData, "application/octet-stream",
                     $"{Path.GetFileNameWithoutExtension(file.File.FileName)}_encrypted.dat");
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, LabFourControllerConstants.ErrorLoadingPublic);
-                return StatusCode(500, new { message = LabFourControllerConstants.ErrorLoadingPublic, error = ex.Message });
-            }
+            }, LabFourControllerConstants.ErrorLoadingPublic);
         }
 
         [HttpPost("decrypt-file")]
         public async Task<IActionResult> DecryptFile([FromForm] DecryptRequest file)
         {
-            try
+            return await ExecuteAsync(async () =>
             {
-                if (file?.File == null || file.File.Length == 0)
-                {
-                    return BadRequest(new { message = LabFourControllerConstants.FileIsRequired });
-                }
-
-                RsaKeyDto privateKey = await ExtractPrivateKeyAsync(file.privateKeyFile, file.privateKeyPem);
+                ValidateFile(file?.File);
+                RsaKeyDto privateKey = await ExtractKeyAsync(file.privateKeyFile, file.privateKeyPem);
 
                 using var inputStream = file.File.OpenReadStream();
                 var (decryptedData, originalFileName, contentType, _) = await _rsaService.DecryptFileAsync(inputStream, privateKey);
 
                 return File(decryptedData, contentType, originalFileName);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, LabFourControllerConstants.ErrorDecryptingFile);
-                return StatusCode(500, new { message = LabFourControllerConstants.ErrorDecryptingFile, error = ex.Message });
-            }
+            }, LabFourControllerConstants.ErrorDecryptingFile);
         }
 
         [HttpPost("encrypt-text")]
         public async Task<IActionResult> EncryptText([FromForm] EncryptTextRequest request)
         {
-            try
+            return await ExecuteAsync(async () =>
             {
-                if (string.IsNullOrWhiteSpace(request?.Text))
-                {
-                    return BadRequest(new { message = "Text is required" });
-                }
-
-                RsaKeyDto publicKey = await ExtractPublicKeyAsync(request.publicKeyFile, request.publicKeyPem);
+                ValidateText(request?.Text);
+                RsaKeyDto publicKey = await ExtractKeyAsync(request.publicKeyFile, request.publicKeyPem);
 
                 var (encryptedData, processingTime) = await _rsaService.EncryptTextAsync(request.Text, publicKey);
 
@@ -228,29 +155,16 @@ namespace WebApplication1.Controllers
                     EncryptedText = encryptedData,
                     ProcessingTimeMs = processingTime
                 });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, LabFourControllerConstants.ErrorEncryptingFile);
-                return StatusCode(500, new { message = LabFourControllerConstants.ErrorEncryptingFile, error = ex.Message });
-            }
+            }, LabFourControllerConstants.ErrorEncryptingFile);
         }
 
         [HttpPost("decrypt-text")]
         public async Task<IActionResult> DecryptText([FromForm] DecryptTextRequest request)
         {
-            try
+            return await ExecuteAsync(async () =>
             {
-                if (string.IsNullOrWhiteSpace(request?.Text))
-                {
-                    return BadRequest(new { message = LabFourControllerConstants.FileIsRequired });
-                }
-
-                RsaKeyDto privateKey = await ExtractPrivateKeyAsync(request.privateKeyFile, request.privateKeyPem);
+                ValidateText(request?.Text);
+                RsaKeyDto privateKey = await ExtractKeyAsync(request.privateKeyFile, request.privateKeyPem);
 
                 var (decryptedData, _) = await _rsaService.DecryptTextAsync(request.Text, privateKey);
 
@@ -260,22 +174,13 @@ namespace WebApplication1.Controllers
                     Message = "Text decrypted successfully",
                     DecryptedText = decryptedData
                 });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, LabFourControllerConstants.ErrorDecryptingFile);
-                return StatusCode(500, new { message = LabFourControllerConstants.ErrorDecryptingFile, error = ex.Message });
-            }
+            }, LabFourControllerConstants.ErrorDecryptingFile);
         }
 
         [HttpDelete("delete-key/{filename}")]
         public async Task<IActionResult> DeleteKey(string filename)
         {
-            try
+            return await ExecuteAsync(async () =>
             {
                 string filePath = ValidateAndGetFilePath(filename);
                 await _rsaService.DeleteKeyAsync(filePath);
@@ -286,20 +191,7 @@ namespace WebApplication1.Controllers
                     message = "Key file successfully deleted",
                     filename = filename
                 });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (FileNotFoundException)
-            {
-                return NotFound(new { message = LabFourControllerConstants.KeyFileNotFound });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting key file");
-                return StatusCode(500, new { message = "Error deleting key file", error = ex.Message });
-            }
+            }, "Error deleting key file");
         }
 
         private string ValidateAndGetFilePath(string filename)
@@ -326,25 +218,7 @@ namespace WebApplication1.Controllers
             return Path.Combine(_keysDirectory, filename);
         }
 
-        private async Task<RsaKeyDto> ExtractPublicKeyAsync(IFormFile? keyFile, string? keyPem)
-        {
-            if (keyFile != null && keyFile.Length > 0)
-            {
-                using var keyStream = keyFile.OpenReadStream();
-                using var reader = new StreamReader(keyStream);
-                var pemContent = await reader.ReadToEndAsync();
-                return ParsePemFile(pemContent);
-            }
-
-            if (!string.IsNullOrEmpty(keyPem))
-            {
-                return ParsePemFile(keyPem);
-            }
-
-            throw new ArgumentException(LabFourControllerConstants.OneOfKeysMustBeProvided);
-        }
-
-        private async Task<RsaKeyDto> ExtractPrivateKeyAsync(IFormFile? keyFile, string? keyPem)
+        private async Task<RsaKeyDto> ExtractKeyAsync(IFormFile? keyFile, string? keyPem)
         {
             if (keyFile != null && keyFile.Length > 0)
             {
@@ -372,6 +246,60 @@ namespace WebApplication1.Controllers
             }
 
             return new RsaKeyDto { PemKey = pemContent };
+        }
+
+        private void ValidateFile(IFormFile? file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                throw new ArgumentException(LabFourControllerConstants.FileIsRequired);
+            }
+        }
+
+        private void ValidateText(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                throw new ArgumentException("Text is required");
+            }
+        }
+
+        private async Task<IActionResult> ExecuteAsync(Func<Task<IActionResult>> operation, string errorMessage)
+        {
+            try
+            {
+                return await operation();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (FileNotFoundException)
+            {
+                return NotFound(new { message = LabFourControllerConstants.KeyFileNotFound });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, errorMessage);
+                return StatusCode(500, new { message = errorMessage, error = ex.Message });
+            }
+        }
+
+        private IActionResult Execute(Func<IActionResult> operation, string errorMessage)
+        {
+            try
+            {
+                return operation();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, errorMessage);
+                return StatusCode(500, new { message = errorMessage, error = ex.Message });
+            }
         }
     }
 }
