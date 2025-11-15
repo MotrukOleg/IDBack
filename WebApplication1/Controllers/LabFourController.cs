@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Constants.ControllersConstants;
 using WebApplication1.Dtos;
 using WebApplication1.Interfaces.IRsaService;
 
@@ -67,14 +68,14 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                string filePath = Path.Combine(_keysDirectory, filename);
+                string filePath = Path.GetFullPath(_keysDirectory + filename);
                 if (!filePath.StartsWith(_keysDirectory))
                 {
-                    return BadRequest(new { message = "Entry is outside of the target directory" });
+                    return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
                 }
                 if (!System.IO.File.Exists(filePath))
                 {
-                    return NotFound(new { message = "Public key file not found" });
+                    return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
                 }
 
                 var publicKey = await _rsaService.LoadPublicKeyAsync(filePath);
@@ -98,11 +99,11 @@ namespace WebApplication1.Controllers
                 string filePath = Path.Combine(_keysDirectory, filename);
                 if (!filePath.StartsWith(_keysDirectory))
                 {
-                    return BadRequest(new { message = "Entry is outside of the target directory" });
+                    return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
                 }
                 if (!System.IO.File.Exists(filePath))
                 {
-                    return NotFound(new { message = "Public key file not found" });
+                    return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
                 }
 
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
@@ -123,11 +124,11 @@ namespace WebApplication1.Controllers
                 string filePath = Path.Combine(_keysDirectory, filename);
                 if (!filePath.StartsWith(_keysDirectory))
                 {
-                    return BadRequest(new { message = "Entry is outside of the target directory" });
+                    return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
                 }
                 if (!System.IO.File.Exists(filePath))
                 {
-                    return NotFound(new { message = "Public key file not found" });
+                    return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
                 }
 
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
@@ -197,7 +198,7 @@ namespace WebApplication1.Controllers
                 }
 
                 using var inputStream = file.File.OpenReadStream();
-                var (encryptedData, processingTime) = await _rsaService.EncryptFileAsync(
+                var (encryptedData, _) = await _rsaService.EncryptFileAsync(
                     inputStream,
                     publicKey,
                     file.File.FileName,
@@ -365,11 +366,11 @@ namespace WebApplication1.Controllers
                 string filePath = Path.Combine(_keysDirectory, filename);
                 if (!filePath.StartsWith(_keysDirectory))
                 {
-                    return BadRequest(new { message = "Entry is outside of the target directory" });
+                    return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
                 }
                 if (!System.IO.File.Exists(filePath))
                 {
-                    return NotFound(new { message = "Public key file not found" });
+                    return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
                 }
 
                 await _rsaService.DeleteKeyAsync(filePath);
