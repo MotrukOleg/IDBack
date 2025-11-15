@@ -1,5 +1,7 @@
 .vs/
+.idea/
 WebApplication1/bin
 WebApplication1/obj
 TestLabs/bin
 TestLabs/obj
+pseudo2.sln.DotSettings

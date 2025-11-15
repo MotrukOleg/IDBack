@@ -1,7 +1,9 @@
+using WebApplication1.Interfaces.IDssService;
 using WebApplication1.Interfaces.IMD5Service;
 using WebApplication1.Interfaces.IPseudoGeneratorService;
 using WebApplication1.Interfaces.IRc5Service;
 using WebApplication1.Interfaces.IRsaService;
+using WebApplication1.Services.DssService;
 using WebApplication1.Services.MD5Service;
 using WebApplication1.Services.PseudoGenService;
 using WebApplication1.Services.RC5Service;
@@ -9,21 +11,18 @@ using WebApplication1.Services.RsaService;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 
-// Swagger configuration
-builder.Services.AddSwaggerGen();  // Removed AddOpenApi as it's redundant
+builder.Services.AddSwaggerGen();
 
-// Register services
 builder.Services.AddScoped<IPseudoGeneratorService, PseudoGenService>(provider =>
     new PseudoGenService(new Random(), (ulong)DateTime.Now.Ticks));
 builder.Services.AddScoped<IMd5Service, Md5Service>();
 builder.Services.AddScoped<IRc5Service, Rc5Service>();
 builder.Services.AddScoped<IRsaService, RsaService>();
+builder.Services.AddSingleton<IDssService, DssService>();
 builder.Services.AddSingleton<Random>();
 
-// Enable CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>
@@ -36,7 +35,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
