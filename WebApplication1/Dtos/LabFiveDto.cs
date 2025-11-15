@@ -2,7 +2,7 @@
 {
     public class FileRequestDto
     {
-        public IFormFile? File { get; set; }
+        public IFormFile File { get; set; } = null!;
     }
     public class GenerateKeysRequestDto
     {

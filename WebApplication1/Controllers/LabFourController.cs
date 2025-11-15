@@ -101,7 +101,7 @@ namespace WebApplication1.Controllers
                 {
                     return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
                 }
-                if (!System.IO.File.Exists(filePath))
+                else if (!System.IO.File.Exists(filePath))
                 {
                     return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
                 }
@@ -126,7 +126,7 @@ namespace WebApplication1.Controllers
                 {
                     return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
                 }
-                if (!System.IO.File.Exists(filePath))
+                else if (!System.IO.File.Exists(filePath))
                 {
                     return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
                 }
@@ -175,7 +175,7 @@ namespace WebApplication1.Controllers
             {
                 if (file == null || file.File.Length == 0)
                 {
-                    return BadRequest(new { message = "File is required" });
+                    return BadRequest(new { message = LabFourControllerConstants.FileIsRequired });
                 }
 
                 RsaKeyDto publicKey;
@@ -221,7 +221,7 @@ namespace WebApplication1.Controllers
             {
                 if (file == null || file.File.Length == 0)
                 {
-                    return BadRequest(new { message = "File is required" });
+                    return BadRequest(new { message = LabFourControllerConstants.FileIsRequired });
                 }
 
                 RsaKeyDto privateKey;
@@ -244,7 +244,7 @@ namespace WebApplication1.Controllers
                 }
 
                 using var inputStream = file.File.OpenReadStream();
-                var (decryptedData, originalFileName, contentType, processingTime) = await _rsaService.DecryptFileAsync(inputStream, privateKey);
+                var (decryptedData, originalFileName, contentType, _) = await _rsaService.DecryptFileAsync(inputStream, privateKey);
                 
 
                 return File(decryptedData, contentType, originalFileName);
@@ -288,8 +288,6 @@ namespace WebApplication1.Controllers
                     request.Text,
                     publicKey);
 
-                _logger.LogInformation($"Text encrypted in {processingTime:F2} ms");
-
                 return Ok(new EncryptionTextResponse
                 {
                     Success = true,
@@ -311,7 +309,7 @@ namespace WebApplication1.Controllers
             {
                 if (request.Text.Length == 0)
                 {
-                    return BadRequest(new { message = "Text is required" });
+                    return BadRequest(new { message = LabFourControllerConstants.FileIsRequired });
                 }
 
                 RsaKeyDto privateKey;
@@ -334,8 +332,6 @@ namespace WebApplication1.Controllers
                 }
 
                 var (decryptedData, processingTime) = await _rsaService.DecryptTextAsync(request.Text, privateKey);
-
-                _logger.LogInformation($"Text decrypted in {processingTime:F2} ms.");
 
                 return Ok(new DecryptionTextResponse {
                     Success = true,
@@ -367,7 +363,7 @@ namespace WebApplication1.Controllers
                 {
                     return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
                 }
-                if (!System.IO.File.Exists(filePath))
+                else if (!System.IO.File.Exists(filePath))
                 {
                     return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
                 }

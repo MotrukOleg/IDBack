@@ -9,18 +9,16 @@ namespace WebApplication1.Controllers;
 public class LabFiveController : ControllerBase
 {
     private readonly IDssService _service;
-    private readonly ILogger<LabFiveController> _logger;
 
-    public LabFiveController(IDssService service, ILogger<LabFiveController> logger)
+    public LabFiveController(IDssService service)
     {
         _service = service;
-        _logger = logger;
     }
 
     [HttpPost("generate-keys")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GenerateKeys([FromBody] GenerateKeysRequestDto? request = null)
     {
-        _logger.LogInformation("Запит на генерацію ключів");
         var result = await _service.GenerateKeys(
             request?.PublicKeyFileName, 
             request?.PrivateKeyFileName
@@ -29,17 +27,17 @@ public class LabFiveController : ControllerBase
     }
 
     [HttpGet("available-keys")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetAvailableKeys()
     {
-        _logger.LogInformation("Запит на отримання списку доступних ключів");
         var files = _service.GetAvailableKeyFiles();
         return Ok(new { files });
     }
     
     [HttpGet("download-key/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DownloadKey(string fileName)
     {
-        _logger.LogInformation("Запит на завантаження файлу ключа: {FileName}", fileName);
         var result = await _service.DownloadKeyFromServer(fileName);
         
         if (!result.Success)
@@ -51,14 +49,15 @@ public class LabFiveController : ControllerBase
     }
     
     [HttpDelete("delete-key/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteKey(string fileName)
     {
-        _logger.LogInformation("Запит на видалення файлу ключа: {FileName}", fileName);
         var result = await _service.DeleteKeyFile(fileName);
         return Ok(result);
     }
     
     [HttpGet("public-key")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetPublicKey()
     {
         var key = _service.GetPublicKey();
@@ -71,6 +70,7 @@ public class LabFiveController : ControllerBase
     }
     
     [HttpGet("private-key")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetPrivateKey()
     {
         var key = _service.GetPrivateKey();
@@ -83,6 +83,7 @@ public class LabFiveController : ControllerBase
     }
     
     [HttpGet("keys-status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetKeysStatus()
     {
         return Ok(new
@@ -93,60 +94,57 @@ public class LabFiveController : ControllerBase
     }
 
     [HttpPost("load-key")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> LoadKeyFromServer([FromBody] LoadKeyRequestDto request)
     {
-        _logger.LogInformation("Запит на завантаження {KeyType} ключа з файлу: {FileName}",
-            request.IsPrivateKey ? "приватного" : "публічного", request.FileName);
         var result = await _service.LoadKeyFromServer(request.FileName, request.IsPrivateKey);
         return Ok(result);
     }
     
     [HttpPost("import-key")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult ImportKey([FromBody] KeyImportRequestDto request)
     {
-        _logger.LogInformation("Запит на імпорт {KeyType} ключа з тексту PEM",
-            request.IsPrivateKey ? "приватного" : "публічного");
         var result = _service.ImportKey(request);
         return Ok(result);
     }
 
     [HttpPost("import-key-file")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ImportKeyFromFile([FromForm] FileRequestDto file, [FromForm] bool isPrivateKey)
     {
-        _logger.LogInformation("Запит на імпорт {KeyType} ключа з завантаженого файлу: {FileName}",
-            isPrivateKey ? "приватного" : "публічного", file?.File.FileName);
         var result = await _service.ImportKeyFromFile(file.File, isPrivateKey);
         return Ok(result);
     }
     
     [HttpPost("sign-text")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult SignText([FromBody] SignatureRequestDto request)
     {
-        _logger.LogInformation("Запит на підпис тексту");
         var result = _service.SignText(request);
         return Ok(result);
     }
 
     [HttpPost("sign-file")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> SignFile([FromForm] FileRequestDto file)
     {
-        _logger.LogInformation("Запит на підпис файлу: {FileName}", file?.File.FileName);
         var result = await _service.SignFile(file.File);
         return Ok(result);
     }
     
     [HttpPost("verify-text")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult VerifyText([FromBody] VerifyRequestDto request)
     {
-        _logger.LogInformation("Запит на перевірку підпису тексту");
         var result = _service.VerifyText(request);
         return Ok(result);
     }
 
     [HttpPost("verify-file")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> VerifyFile([FromForm] FileRequestDto file, [FromForm] string signatureHex)
     {
-        _logger.LogInformation("Запит на перевірку підпису файлу: {FileName}", file?.File.FileName);
         var result = await _service.VerifyFile(file.File, signatureHex);
         return Ok(result);
     }
