@@ -7,7 +7,7 @@ namespace WebApplication1.Controllers
     [ApiController]
     [Route("api/[controller]")]
     public class LabFourController : ControllerBase
-    {
+    { 
         private readonly IRsaService _rsaService;
         private readonly ILogger<LabFourController> _logger;
         private readonly string _keysDirectory;
@@ -68,7 +68,10 @@ namespace WebApplication1.Controllers
             try
             {
                 string filePath = Path.Combine(_keysDirectory, filename);
-
+                if (!filePath.StartsWith(_keysDirectory))
+                {
+                    return BadRequest(new { message = "Entry is outside of the target directory" });
+                }
                 if (!System.IO.File.Exists(filePath))
                 {
                     return NotFound(new { message = "Public key file not found" });
@@ -93,7 +96,10 @@ namespace WebApplication1.Controllers
             try
             {
                 string filePath = Path.Combine(_keysDirectory, filename);
-
+                if (!filePath.StartsWith(_keysDirectory))
+                {
+                    return BadRequest(new { message = "Entry is outside of the target directory" });
+                }
                 if (!System.IO.File.Exists(filePath))
                 {
                     return NotFound(new { message = "Public key file not found" });
@@ -115,10 +121,13 @@ namespace WebApplication1.Controllers
             try
             {
                 string filePath = Path.Combine(_keysDirectory, filename);
-
+                if (!filePath.StartsWith(_keysDirectory))
+                {
+                    return BadRequest(new { message = "Entry is outside of the target directory" });
+                }
                 if (!System.IO.File.Exists(filePath))
                 {
-                    return NotFound(new { message = "Private key file not found" });
+                    return NotFound(new { message = "Public key file not found" });
                 }
 
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
@@ -132,6 +141,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("keys")]
+        [ProducesResponseType(typeof(string), 200)]
         public IActionResult ListKeys()
         {
             try
@@ -192,8 +202,7 @@ namespace WebApplication1.Controllers
                     publicKey,
                     file.File.FileName,
                     file.File.ContentType);
-
-                _logger.LogInformation($"File '{file.File.FileName}' encrypted in {processingTime:F2} ms");
+                
 
                 return File(encryptedData, "application/octet-stream", $"{Path.GetFileNameWithoutExtension(file.File.FileName)}_encrypted.dat");
             }
@@ -242,7 +251,6 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error decrypting file");
                 return StatusCode(500, new { message = "Error decrypting file", error = ex.Message });
             }
         }
@@ -292,7 +300,6 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error encrypting file");
                 return StatusCode(500, new { message = "Error encrypting file", error = ex.Message });
             }
         }
@@ -338,7 +345,6 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error decrypting file");
                 return StatusCode(500, new { message = "Error decrypting file", error = ex.Message });
             }
         }
@@ -357,10 +363,13 @@ namespace WebApplication1.Controllers
                 }
 
                 string filePath = Path.Combine(_keysDirectory, filename);
-
+                if (!filePath.StartsWith(_keysDirectory))
+                {
+                    return BadRequest(new { message = "Entry is outside of the target directory" });
+                }
                 if (!System.IO.File.Exists(filePath))
                 {
-                    return NotFound(new { message = "Key file not found" });
+                    return NotFound(new { message = "Public key file not found" });
                 }
 
                 await _rsaService.DeleteKeyAsync(filePath);
@@ -373,19 +382,16 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting key file");
                 return StatusCode(500, new { message = "Error deleting key file", error = ex.Message });
             }
         }
 
         private RsaKeyDto ParsePemFile(string pemContent)
         {
-            string createdAt = "Unknown";
             var lines = pemContent.Split('\n');
 
             if (lines[0].StartsWith("# Created at:"))
             {
-                createdAt = lines[0].Replace("# Created at:", "").Trim();
                 pemContent = string.Join('\n', lines.Skip(1)).Trim();
             }
 

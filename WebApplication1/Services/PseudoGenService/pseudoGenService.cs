@@ -4,8 +4,8 @@ namespace WebApplication1.Services.PseudoGenService
 {
     public class PseudoGenService : IPseudoGeneratorService
     {
-        private long[] _seq = Array.Empty<long>();
-        private long[] _randomSequence = Array.Empty<long>();
+        public static int MAX_BOUNDARY = 1337;
+        public static int MIN_BOUNDARY = 1;
         private long _period;
         private long _periodRandom;
         private double _cesaroRatio;
@@ -19,15 +19,22 @@ namespace WebApplication1.Services.PseudoGenService
         public PseudoGenService(Random random, ulong seed)
         {
             _random = random;
-            seed = state;
         }
 
         public async Task<(long[] seq , long[] randomSeq)> Generate(long a , long m , long n , long c , long x0)
         {
-            _seq = new long[n];
-            _randomSequence = new long[n];
-
-            string path = Directory.GetCurrentDirectory();
+            if (MIN_BOUNDARY > n)
+            {
+                n = MIN_BOUNDARY;
+            }
+            else if (n > MAX_BOUNDARY)
+            {
+                n = MAX_BOUNDARY;
+            }
+            
+            long[] _seq = new long[n];
+            long[] _randomSequence = new long[n];
+            
             _seq[0] = x0;
 
             for (int i = 0; i < n - 1; i++)
@@ -94,7 +101,7 @@ namespace WebApplication1.Services.PseudoGenService
             return (byte)(state >> 32);
         }
 
-        public byte[] GeneratePseudoRandom(int count, uint seed)
+        public static byte[] GeneratePseudoRandom(int count, uint seed)
         {
             byte[] result = new byte[count];
             uint state = seed;
@@ -118,7 +125,7 @@ namespace WebApplication1.Services.PseudoGenService
             return result;
         }
 
-        private long Gcd(long a , long b)
+        private static long Gcd(long a , long b)
         {
             while (b != 0)
             {

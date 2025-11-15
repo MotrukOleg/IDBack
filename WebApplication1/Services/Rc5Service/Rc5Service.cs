@@ -10,20 +10,17 @@ namespace WebApplication1.Services.RC5Service
     {
         private readonly ILogger<Rc5Service> _logger;
         private readonly IMd5Service _md5Service;
-        private readonly IPseudoGeneratorService _pseudoGenService;
 
         public Rc5Service(ILogger<Rc5Service> logger, IMd5Service md5Service, IPseudoGeneratorService pseudoGen)
         {
             _logger = logger;
             _md5Service = md5Service;
-            _pseudoGenService = pseudoGen;
         }
 
         public (byte[] encryptedData, byte[] iv) EncryptText(string data, string password, int keySize = 128)
         {
             try
             {
-                _logger.LogInformation($"Start text encryption (keySize: {keySize})");
 
                 byte[] dataBytes = Encoding.UTF8.GetBytes(data);
                 byte[] key = DeriveKey(password, keySize);
@@ -47,7 +44,6 @@ namespace WebApplication1.Services.RC5Service
         {
             try
             {
-                _logger.LogInformation($"Start text decryption (keySize: {keySize})");
 
                 byte[] key = DeriveKey(password, keySize);
                 var rc5 = new Rc5Cipher(key);
@@ -67,7 +63,6 @@ namespace WebApplication1.Services.RC5Service
 
         public byte[] EncryptBytesWithMetadata(byte[] data, string password, string fileName, int keySize = 128)
         {
-            _logger.LogInformation($"Encryption with metadata (file: {fileName})");
 
             var metadata = new EncryptedFileMetadataDto
             {
@@ -102,15 +97,13 @@ namespace WebApplication1.Services.RC5Service
         {
             try
             {
-                _logger.LogInformation($"Starting file encryption (size: {data.Length} bytes, keySize: {keySize})");
 
                 byte[] key = DeriveKey(password, keySize);
                 byte[] iv = Generate();
 
                 var rc5 = new Rc5Cipher(key);
                 byte[] encrypted = rc5.EncryptCBC(data, iv);
-
-                _logger.LogInformation($"File successfully encrypted (new size: {encrypted.Length} bytes)");
+                
                 return encrypted;
             }
             catch (Exception ex)
@@ -142,8 +135,7 @@ namespace WebApplication1.Services.RC5Service
 
                 var rc5Data = new Rc5Cipher(key);
                 byte[] decryptedData = rc5Data.DecryptCBC(encryptedFileData);
-
-                _logger.LogInformation($"File decrypted. Original extension: {metadata.OriginalExtension}");
+                
                 return (decryptedData, metadata);
             }
             catch (Exception ex)
@@ -157,14 +149,12 @@ namespace WebApplication1.Services.RC5Service
         {
             try
             {
-                _logger.LogInformation($"Starting file decryption (size: {encryptedData.Length} bytes)");
 
                 byte[] key = DeriveKey(password, keySize);
                 var rc5 = new Rc5Cipher(key);
 
                 byte[] decrypted = rc5.DecryptCBC(encryptedData);
-
-                _logger.LogInformation($"File successfully decrypted (size: {decrypted.Length} bytes)");
+                
                 return decrypted;
             }
             catch (Exception ex)
@@ -211,7 +201,7 @@ namespace WebApplication1.Services.RC5Service
             return key;
         }
 
-        private byte[] Generate()
+        private static byte[] Generate()
         {
             using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
             byte[] iv = new byte[8];
@@ -226,7 +216,7 @@ namespace WebApplication1.Services.RC5Service
         private const int BlockSize = 2*(W / 8);
 
         private uint[] _s;
-        private int _keySize;
+        private readonly int _keySize;
 
         public Rc5Cipher(byte[] key)
         {
@@ -270,13 +260,13 @@ namespace WebApplication1.Services.RC5Service
             }
         }
 
-        private uint RotateLeft(uint value, int count)
+        private static uint RotateLeft(uint value, int count)
         {
             count &= (W - 1);
             return (value << count) | (value >> (W - count));
         }
 
-        private uint RotateRight(uint value, int count)
+        private static uint RotateRight(uint value, int count)
         {
             count &= (W - 1);
             return (value >> count) | (value << (W - count));
@@ -403,7 +393,7 @@ namespace WebApplication1.Services.RC5Service
 
             int paddingSize = decryptedData[decryptedData.Length - 1];
             if (paddingSize < 1 || paddingSize > BlockSize)
-                throw new Exception("Incorrect padding");
+                throw new ArgumentException("Incorrect padding");
 
             byte[] result = new byte[decryptedData.Length - paddingSize];
             Array.Copy(decryptedData, result, result.Length);

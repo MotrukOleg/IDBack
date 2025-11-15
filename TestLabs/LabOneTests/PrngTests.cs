@@ -311,7 +311,7 @@ namespace TestLabs.LabOneTests
             uint seed = 123;
 
             // Act
-            var bytes = _service.GeneratePseudoRandom(count, seed);
+            var bytes = PseudoGenService.GeneratePseudoRandom(8, seed);
 
             // Assert
             Assert.Equal(count, bytes.Length);
@@ -329,7 +329,7 @@ namespace TestLabs.LabOneTests
             uint seed = 42;
 
             // Act
-            var bytes = _service.GeneratePseudoRandom(count, seed);
+            var bytes = PseudoGenService.GeneratePseudoRandom(count, seed);
 
             // Assert
             Assert.Equal(count, bytes.Length);
@@ -343,8 +343,8 @@ namespace TestLabs.LabOneTests
             int count = 16;
 
             // Act
-            var bytes1 = _service.GeneratePseudoRandom(count, seed);
-            var bytes2 = _service.GeneratePseudoRandom(count, seed);
+            var bytes1 = PseudoGenService.GeneratePseudoRandom(count, seed);
+            var bytes2 = PseudoGenService.GeneratePseudoRandom(count, seed);
 
             // Assert
             Assert.Equal(bytes1, bytes2);
@@ -357,8 +357,8 @@ namespace TestLabs.LabOneTests
             int count = 16;
 
             // Act
-            var bytes1 = _service.GeneratePseudoRandom(count, 123);
-            var bytes2 = _service.GeneratePseudoRandom(count, 456);
+            var bytes1 = PseudoGenService.GeneratePseudoRandom(count, 123);
+            var bytes2 = PseudoGenService.GeneratePseudoRandom(count, 456);
 
             // Assert
             Assert.NotEqual(bytes1, bytes2);
@@ -368,7 +368,7 @@ namespace TestLabs.LabOneTests
         public void GeneratePseudoRandom_ReturnsNonNullArray()
         {
             // Act
-            var bytes = _service.GeneratePseudoRandom(8, 123);
+            var bytes = PseudoGenService.GeneratePseudoRandom(8, 123);
 
             // Assert
             Assert.NotNull(bytes);
@@ -381,7 +381,7 @@ namespace TestLabs.LabOneTests
         public void GeneratePseudoRandom_VariousSeeds_ReturnsValidBytes(uint seed)
         {
             // Act
-            var bytes = _service.GeneratePseudoRandom(16, seed);
+            var bytes = PseudoGenService.GeneratePseudoRandom(16, seed);
 
             // Assert
             Assert.Equal(16, bytes.Length);

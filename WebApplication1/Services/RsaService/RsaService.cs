@@ -33,8 +33,7 @@ namespace WebApplication1.Services.RsaService
                 {
                     PemKey = privateKeyPem,
                 };
-
-                _logger.LogInformation($"Generated RSA key pair with size {keySize} bits");
+                
                 return (publicKey, privateKey);
             });
         }
@@ -45,8 +44,7 @@ namespace WebApplication1.Services.RsaService
             var content = new StringBuilder();
             content.Append(key.PemKey);
 
-            await File.WriteAllTextAsync(pemFilePath, content.ToString());
-            _logger.LogInformation($"Public key saved to {pemFilePath}");
+            await File.WriteAllTextAsync(pemFilePath, content.ToString()); ;
         }
 
         public async Task SavePrivateKeyAsync(RsaKeyDto privateKey, string filePath)
@@ -56,18 +54,15 @@ namespace WebApplication1.Services.RsaService
             content.Append(privateKey.PemKey);
 
             await File.WriteAllTextAsync(pemFilePath, content.ToString());
-            _logger.LogWarning($"Private key saved to {pemFilePath} - Keep this file secure!");
         }
 
         public async Task<RsaKeyDto> LoadPublicKeyAsync(string filePath)
         {
             string content = await File.ReadAllTextAsync(filePath);
-
-            string createdAt = "Unknown";
+            
             var lines = content.Split('\n');
             if (lines[0].StartsWith("# Created at:"))
             {
-                createdAt = lines[0].Replace("# Created at:", "").Trim();
                 content = string.Join('\n', lines.Skip(1));
             }
 
@@ -75,8 +70,7 @@ namespace WebApplication1.Services.RsaService
             {
                 PemKey = content.Trim()
             };
-
-            _logger.LogInformation($"Public key loaded from {filePath}");
+            
             return key;
         }
 
@@ -96,8 +90,7 @@ namespace WebApplication1.Services.RsaService
             {
                 PemKey = content.Trim()
             };
-
-            _logger.LogInformation($"Private key loaded from {filePath}");
+            
             return key;
         }
 
@@ -107,14 +100,12 @@ namespace WebApplication1.Services.RsaService
             {
                 if (!File.Exists(filePath))
                 {
-                    _logger.LogWarning($"Key file not found: {filePath}");
                     throw new FileNotFoundException($"Key file not found: {filePath}");
                 }
 
                 try
                 {
                     File.Delete(filePath);
-                    _logger.LogInformation($"Key file deleted successfully: {filePath}");
                 }
                 catch (Exception ex)
                 {
@@ -176,7 +167,6 @@ namespace WebApplication1.Services.RsaService
                 }
 
                 stopwatch.Stop();
-                _logger.LogInformation($"File '{originalFileName}' encrypted in {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
 
                 return (outputStream.ToArray(), stopwatch.Elapsed.TotalMilliseconds);
             });
@@ -230,7 +220,6 @@ namespace WebApplication1.Services.RsaService
                 }
 
                 stopwatch.Stop();
-                _logger.LogInformation($"File decrypted in {stopwatch.Elapsed.TotalMilliseconds:F2} ms. Original: {metadata.OriginalFileName}");
 
                 return (outputStream.ToArray(), metadata.OriginalFileName, metadata.ContentType, stopwatch.Elapsed.TotalMilliseconds);
             });
@@ -250,7 +239,6 @@ namespace WebApplication1.Services.RsaService
                 string encryptedText = Convert.ToBase64String(encryptedBytes);
 
                 stopwatch.Stop();
-                _logger.LogInformation($"Text encrypted in {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
 
                 return (encryptedText, stopwatch.Elapsed.TotalMilliseconds);
             });
@@ -270,7 +258,6 @@ namespace WebApplication1.Services.RsaService
                 string decryptedText = Encoding.UTF8.GetString(decryptedBytes);
 
                 stopwatch.Stop();
-                _logger.LogInformation($"Text decrypted in {stopwatch.Elapsed.TotalMilliseconds:F2} ms");
 
                 return (decryptedText, stopwatch.Elapsed.TotalMilliseconds);
             });

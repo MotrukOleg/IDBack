@@ -49,7 +49,7 @@ public class DssService : IDssService
     {
         try
         {
-            _dsa = DSA.Create(1024);
+            _dsa = DSA.Create(2048);
             
             _publicKeyPem = _dsa.ExportSubjectPublicKeyInfoPem();
             _privateKeyPem = _dsa.ExportPkcs8PrivateKeyPem();
