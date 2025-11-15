@@ -73,7 +73,7 @@ namespace WebApplication1.Controllers
                 {
                     return BadRequest(new { message = LabFourControllerConstants.EntyIsOutsideOfTheTarget });
                 }
-                if (!System.IO.File.Exists(filePath))
+                else if (!System.IO.File.Exists(filePath))
                 {
                     return NotFound(new { message = LabFourControllerConstants.PublicKeyNotFount });
                 }
@@ -86,8 +86,8 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading public key");
-                return StatusCode(500, new { message = "Error loading public key", error = ex.Message });
+                _logger.LogError(ex, LabFourControllerConstants.ErrorLoadingPublic);
+                return StatusCode(500, new { message = LabFourControllerConstants.ErrorLoadingPublic, error = ex.Message });
             }
         }
 
@@ -111,8 +111,8 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error downloading public key");
-                return StatusCode(500, new { message = "Error downloading public key", error = ex.Message });
+                _logger.LogError(ex, LabFourControllerConstants.ErrorLoadingPublic);
+                return StatusCode(500, new { message = LabFourControllerConstants.ErrorLoadingPublic, error = ex.Message });
             }
         }
 
@@ -136,8 +136,8 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error downloading private key");
-                return StatusCode(500, new { message = "Error downloading private key", error = ex.Message });
+                _logger.LogError(ex, LabFourControllerConstants.ErrorLoadingPublic);
+                return StatusCode(500, new { message = LabFourControllerConstants.ErrorLoadingPublic, error = ex.Message });
             }
         }
 
@@ -209,8 +209,8 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error encrypting file");
-                return StatusCode(500, new { message = "Error encrypting file", error = ex.Message });
+                _logger.LogError(ex, LabFourControllerConstants.ErrorLoadingPublic);
+                return StatusCode(500, new { message = LabFourControllerConstants.ErrorLoadingPublic, error = ex.Message });
             }
         }
 
@@ -245,8 +245,7 @@ namespace WebApplication1.Controllers
 
                 using var inputStream = file.File.OpenReadStream();
                 var (decryptedData, originalFileName, contentType, processingTime) = await _rsaService.DecryptFileAsync(inputStream, privateKey);
-
-                _logger.LogInformation($"File '{file.File.FileName}' decrypted in {processingTime:F2} ms. Original: {originalFileName}");
+                
 
                 return File(decryptedData, contentType, originalFileName);
             }
