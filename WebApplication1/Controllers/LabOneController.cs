@@ -8,11 +8,9 @@ namespace WebApplication1.Controllers
     [Route("api/[controller]")]
     public class LabOneController : ControllerBase
     {
-        private readonly Random _random;
         private readonly IPseudoGeneratorService _pseudoGenService;
-        public LabOneController(Random random, IPseudoGeneratorService pseudoGenService)
+        public LabOneController(IPseudoGeneratorService pseudoGenService)
         {
-            _random = random;
             _pseudoGenService = pseudoGenService;
         }
 

@@ -174,19 +174,19 @@ public class DssService : IDssService
     {
         try
         {
-            var filePath = Path.Combine(_keysDirectory, fileName);
-            
-            if (!File.Exists(filePath))
+            var filePath = ValidateAndGetFilePath(fileName);
+
+            if (filePath == null)
             {
                 return new KeyImportResponseDto
                 {
                     Success = false,
-                    Message = $"File not found: {fileName}"
+                    Message = "File not found or invalid filename"
                 };
             }
 
             var keyPem = await File.ReadAllTextAsync(filePath);
-            
+
             var result = ImportKey(new KeyImportRequestDto
             {
                 KeyPem = keyPem,
@@ -215,20 +215,20 @@ public class DssService : IDssService
     {
         try
         {
-            var filePath = Path.Combine(_keysDirectory, fileName);
-            
-            if (!File.Exists(filePath))
+            var filePath = ValidateAndGetFilePath(fileName);
+
+            if (filePath == null)
             {
                 return new KeyExportResponseDto
                 {
                     Success = false,
-                    Message = $"File not found: {fileName}"
+                    Message = "File not found or invalid filename"
                 };
             }
 
             var keyContent = await File.ReadAllTextAsync(filePath);
             var bytes = Encoding.UTF8.GetBytes(keyContent);
-            
+
             _logger.LogInformation("Key file prepared for download: {FileName}", fileName);
 
             return new KeyExportResponseDto
@@ -280,19 +280,19 @@ public class DssService : IDssService
     {
         try
         {
-            var filePath = Path.Combine(_keysDirectory, fileName);
-            
-            if (!File.Exists(filePath))
+            var filePath = ValidateAndGetFilePath(fileName);
+
+            if (filePath == null)
             {
                 return new KeySaveResponseDto
                 {
                     Success = false,
-                    Message = $"File not found: {fileName}"
+                    Message = "File not found or invalid filename"
                 };
             }
 
             File.Delete(filePath);
-            
+
             _logger.LogInformation("Key file deleted: {FileName}", fileName);
 
             return new KeySaveResponseDto
@@ -551,6 +551,30 @@ public class DssService : IDssService
                 Message = $"Error verifying file signature: {ex.Message}"
             };
         }
+    }
+    
+    private string? ValidateAndGetFilePath(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return null;
+        }
+
+        if (fileName.Contains("..") || fileName.Contains("/") || fileName.Contains("\\") || fileName.Contains(":"))
+        {
+            return null;
+        }
+
+        var availableFiles = Directory.GetFiles(_keysDirectory, "*.pem")
+            .Select(Path.GetFileName)
+            .ToList();
+
+        if (!availableFiles.Contains(fileName))
+        {
+            return null;
+        }
+
+        return Path.Combine(_keysDirectory, fileName);
     }
     
     private byte[] HexToBytes(string hex)

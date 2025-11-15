@@ -8,4 +8,6 @@ public static class LabFourControllerConstants
     public static readonly string PublicKeyNotFount = "Public key file not found";
     public static readonly string ErrorLoadingPublic = "Error loading public key";
     public static readonly string FileIsRequired = "File is required";
+    public static readonly string KeyFileNotFound = "Key file not found";
+    public static readonly string OneOfKeysMustBeProvided = "Either privateKeyFilename or privateKeyFile must be provided";
 }

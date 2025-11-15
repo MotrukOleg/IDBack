@@ -74,7 +74,7 @@ namespace WebApplication1.Controllers
 
                 if (!availableFiles.Contains(filename))
                 {
-                    return NotFound(new { message = "Key file not found" });
+                    return NotFound(new { message = LabFourControllerConstants.KeyFileNotFound });
                 }
                 
                 string filePath = Path.GetFullPath(_keysDirectory + filename);
@@ -103,7 +103,7 @@ namespace WebApplication1.Controllers
 
                 if (!availableFiles.Contains(filename))
                 {
-                    return NotFound(new { message = "Key file not found" });
+                    return NotFound(new { message = LabFourControllerConstants.KeyFileNotFound });
                 }
                 
                 string filePath = Path.Combine(_keysDirectory, filename);
@@ -129,7 +129,7 @@ namespace WebApplication1.Controllers
 
                 if (!availableFiles.Contains(filename))
                 {
-                    return NotFound(new { message = "Key file not found" });
+                    return NotFound(new { message = LabFourControllerConstants.KeyFileNotFound });
                 }
                 
                 string filePath = Path.Combine(_keysDirectory, filename);
@@ -243,7 +243,7 @@ namespace WebApplication1.Controllers
                 }
                 else
                 {
-                    return BadRequest(new { message = "Either privateKeyFilename or privateKeyFile must be provided" });
+                    return BadRequest(new { message = LabFourControllerConstants.OneOfKeysMustBeProvided });
                 }
 
                 using var inputStream = file.File.OpenReadStream();
@@ -284,7 +284,7 @@ namespace WebApplication1.Controllers
                 }
                 else
                 {
-                    return BadRequest(new { message = "Either publicKey or publicKeyFile must be provided" });
+                    return BadRequest(new { message = LabFourControllerConstants.OneOfKeysMustBeProvided });
                 }
 
                 var (encryptedData, processingTime) = await _rsaService.EncryptTextAsync(
@@ -331,7 +331,7 @@ namespace WebApplication1.Controllers
                 }
                 else
                 {
-                    return BadRequest(new { message = "Either privateKey or privateKeyFile must be provided" });
+                    return BadRequest(new { message = LabFourControllerConstants.OneOfKeysMustBeProvided });
                 }
 
                 var (decryptedData, _) = await _rsaService.DecryptTextAsync(request.Text, privateKey);
@@ -369,7 +369,7 @@ namespace WebApplication1.Controllers
 
                 if (!availableFiles.Contains(filename))
                 {
-                    return NotFound(new { message = "Key file not found" });
+                    return NotFound(new { message = LabFourControllerConstants.KeyFileNotFound });
                 }
 
                 string filePath = Path.Combine(_keysDirectory, filename);

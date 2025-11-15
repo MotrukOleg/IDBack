@@ -4,8 +4,8 @@ namespace WebApplication1.Services.PseudoGenService
 {
     public class PseudoGenService : IPseudoGeneratorService
     {
-        public static int MAX_BOUNDARY = 1337;
-        public static int MIN_BOUNDARY = 1;
+        public readonly static int MAX_BOUNDARY = 1337;
+        public readonly static int MIN_BOUNDARY = 1;
         private long _period;
         private long _periodRandom;
         private double _cesaroRatio;
