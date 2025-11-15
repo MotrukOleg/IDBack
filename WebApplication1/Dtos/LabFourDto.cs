@@ -10,7 +10,7 @@ namespace WebApplication1.Dtos
 
     public class EncryptRequest
     {
-        public IFormFile File { get; set; }
+        public IFormFile File { get; set; } = null!;
         public IFormFile? publicKeyFile { get; set; }
         public string? publicKeyPem { get; set; }
     }

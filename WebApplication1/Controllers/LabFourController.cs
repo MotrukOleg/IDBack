@@ -112,9 +112,9 @@ namespace WebApplication1.Controllers
             return await ExecuteAsync(async () =>
             {
                 ValidateFile(file?.File);
-                RsaKeyDto publicKey = await ExtractKeyAsync(file.publicKeyFile, file.publicKeyPem);
+                RsaKeyDto publicKey = await ExtractKeyAsync(file?.publicKeyFile, file?.publicKeyPem);
 
-                using var inputStream = file.File.OpenReadStream();
+                using var inputStream = file!.File.OpenReadStream();
                 var (encryptedData, _) = await _rsaService.EncryptFileAsync(
                     inputStream, publicKey, file.File.FileName, file.File.ContentType);
 
@@ -129,7 +129,7 @@ namespace WebApplication1.Controllers
             return await ExecuteAsync(async () =>
             {
                 ValidateFile(file?.File);
-                RsaKeyDto privateKey = await ExtractKeyAsync(file.privateKeyFile, file.privateKeyPem);
+                RsaKeyDto privateKey = await ExtractKeyAsync(file!.privateKeyFile, file.privateKeyPem);
 
                 using var inputStream = file.File.OpenReadStream();
                 var (decryptedData, originalFileName, contentType, _) = await _rsaService.DecryptFileAsync(inputStream, privateKey);
@@ -144,7 +144,7 @@ namespace WebApplication1.Controllers
             return await ExecuteAsync(async () =>
             {
                 ValidateText(request?.Text);
-                RsaKeyDto publicKey = await ExtractKeyAsync(request.publicKeyFile, request.publicKeyPem);
+                RsaKeyDto publicKey = await ExtractKeyAsync(request!.publicKeyFile, request.publicKeyPem);
 
                 var (encryptedData, processingTime) = await _rsaService.EncryptTextAsync(request.Text, publicKey);
 
@@ -164,7 +164,7 @@ namespace WebApplication1.Controllers
             return await ExecuteAsync(async () =>
             {
                 ValidateText(request?.Text);
-                RsaKeyDto privateKey = await ExtractKeyAsync(request.privateKeyFile, request.privateKeyPem);
+                RsaKeyDto privateKey = await ExtractKeyAsync(request!.privateKeyFile, request.privateKeyPem);
 
                 var (decryptedData, _) = await _rsaService.DecryptTextAsync(request.Text, privateKey);
 
