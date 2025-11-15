@@ -11,4 +11,6 @@ public static class LabFourControllerConstants
     public static readonly string KeyFileNotFound = "Key file not found";
     public static readonly string OneOfKeysMustBeProvided = "Either privateKeyFilename or privateKeyFile must be provided";
     public static readonly string PemFormat = "*.pem";
+    public static readonly string ErrorDecryptingFile = "Error decrypting file";
+    public static readonly string ErrorEncryptingFile = "Error encrypting file";
 }

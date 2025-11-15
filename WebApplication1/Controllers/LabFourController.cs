@@ -254,7 +254,7 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error decrypting file", error = ex.Message });
+                return StatusCode(500, new { message = LabFourControllerConstants.ErrorDecryptingFile, error = ex.Message });
             }
         }
 
@@ -301,7 +301,7 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error encrypting file", error = ex.Message });
+                return StatusCode(500, new { message = LabFourControllerConstants.ErrorEncryptingFile, error = ex.Message });
             }
         }
 
@@ -344,7 +344,7 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error decrypting file", error = ex.Message });
+                return StatusCode(500, new { message = LabFourControllerConstants.ErrorDecryptingFile, error = ex.Message });
             }
         }
 
